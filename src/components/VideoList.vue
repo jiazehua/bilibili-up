@@ -4,20 +4,39 @@ import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import localforage from 'localforage';
 import Darkmode from 'darkmode-js';
+/**
+ * @Author: jiazehua
+ * @Description: 定义参数
+ * @param {*}
+ * @return {*}
+ */
+
 defineProps({
   msg: String
 });
 
+/**
+ * @Author: jiazehua
+ * @Description: 定义响应式数据
+ * @param {*}
+ * @return {*}
+ */
 const data = reactive({
   bv: '',
   videoList: [],
   dataInterval: '',
   second: 10
 });
+
+/**
+ * @Author: jiazehua
+ * @Description: 监听 视频列表
+ * @param {*}
+ * @return {*}
+ */
 watch(
   () => data.videoList,
   val => {
-    console.log('val :>> ', JSON.parse(JSON.stringify(val)));
     const _json = JSON.parse(JSON.stringify(val));
     if (!getUrlParam('bv')) {
       localforage.setItem('__bvlist', _json);
@@ -25,6 +44,13 @@ watch(
   },
   { deep: true }
 );
+
+/**
+ * @Author: jiazehua
+ * @Description: 监听 计时器 刷新数据
+ * @param {*}
+ * @return {*}
+ */
 watch(
   () => data.second,
   val => {
@@ -32,6 +58,39 @@ watch(
   }
 );
 
+/**
+ * @Author: jiazehua
+ * @Description: 页面初始化方法
+ * @param {*}
+ * @return {*}
+ */
+onMounted(() => {
+  const bvListString = getUrlParam('bv');
+  if (bvListString) {
+    let bvList = bvListString.split(',');
+    let newBvList = [];
+    bvList.forEach(bv => {
+      newBvList.push({
+        bv
+      });
+    });
+    data.videoList = newBvList;
+  } else {
+    getCache();
+  }
+  setTimeout(() => {
+    getData();
+  }, 1000);
+  loopGetData();
+  new Darkmode().showWidget();
+});
+
+/**
+ * @Author: jiazehua
+ * @Description: 获取页面初始化的url参数
+ * @param {*}
+ * @return {*}
+ */
 function getCache() {
   localforage
     .getItem('__bvlist')
@@ -45,6 +104,12 @@ function getCache() {
     });
 }
 
+/**
+ * @Author: jiazehua
+ * @Description: 添加视频
+ * @param {*}
+ * @return {*}
+ */
 function addVideoHandler() {
   if (!data.bv) return;
   let bvList = [];
@@ -65,6 +130,13 @@ function addVideoHandler() {
   }
   data.bv = '';
 }
+
+/**
+ * @Author: jiazehua
+ * @Description: 获取视频数据
+ * @param {*}
+ * @return {*}
+ */
 function getData() {
   data.videoList.forEach(element => {
     axios
@@ -100,6 +172,12 @@ function getData() {
   });
 }
 
+/**
+ * @Author: jiazehua
+ * @Description: 移除视频
+ * @param {*} videoItem
+ * @return {*}
+ */
 function removeVideo(videoItem) {
   let newList = [];
   data.videoList.forEach(element => {
@@ -113,6 +191,13 @@ function removeVideo(videoItem) {
     type: 'success'
   });
 }
+
+/**
+ * @Author: jiazehua
+ * @Description: 复制地址方法
+ * @param {*} id
+ * @return {*}
+ */
 function copyUrl(id) {
   $('body').after("<input id='copyVal'></input>");
   var text = id;
@@ -123,36 +208,37 @@ function copyUrl(id) {
   document.execCommand('copy');
   $('#copyVal').remove();
 }
-onMounted(() => {
-  const bvListString = getUrlParam('bv');
-  if (bvListString) {
-    let bvList = bvListString.split(',');
-    let newBvList = [];
-    bvList.forEach(bv => {
-      newBvList.push({
-        bv
-      });
-    });
-    data.videoList = newBvList;
-  } else {
-    getCache();
-  }
-  setTimeout(() => {
-    getData();
-  }, 1000);
-  loopGetData();
-  new Darkmode().showWidget();
-});
+
+/**
+ * @Author: jiazehua
+ * @Description: 千位分割 template调用
+ * @param {*}
+ * @return {*}
+ */
 
 function commafy(num) {
   return num ? String(num).replace(/(\d)(?=(\d{3})+$)/g, '$1,') : 0;
 }
+
+/**
+ * @Author: jiazehua
+ * @Description: 获取URL参数
+ * @param {*} name
+ * @return {*}
+ */
 function getUrlParam(name) {
   var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)'); // 构造一个含有目标参数的正则表达式对象
   var r = window.location.search.substr(1).match(reg); // 匹配目标参数
   if (r != null) return unescape(r[2]);
   return null; // 返回参数值
 }
+
+/**
+ * @Author: jiazehua
+ * @Description: 定时刷新数据
+ * @param {*}
+ * @return {*}
+ */
 function loopGetData() {
   if (data.dataInterval) {
     clearInterval(data.dataInterval);
@@ -161,17 +247,24 @@ function loopGetData() {
     getData();
   }, 1000 * data.second);
 }
+
+/**
+ * @Author: jiazehua
+ * @Description: 分享按钮
+ * @param {*}
+ * @return {*}
+ */
 function share() {
   let url = 'http://' + window.document.domain;
-  let params = '?bv='
-  let paramsArray = []
-  if(data?.videoList?.length){
+  let params = data.videoList?.length ? '?bv=' : '';
+  let paramsArray = [];
+  if (data?.videoList?.length) {
     data.videoList.forEach(element => {
-      paramsArray.push(element.bv)
+      paramsArray.push(element.bv);
     });
   }
-  url = url + params + paramsArray.join()
-  
+  url = url + params + paramsArray.join();
+
   copyUrl(url);
   ElMessage({
     message: '地址已复制，分享给别人吧！',
