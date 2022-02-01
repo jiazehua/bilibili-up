@@ -3,6 +3,7 @@ import { onMounted, reactive, ref, toRaw, watch } from 'vue';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import localforage from 'localforage';
+import Darkmode from 'darkmode-js';
 defineProps({
   msg: String
 });
@@ -18,9 +19,17 @@ watch(
   val => {
     console.log('val :>> ', JSON.parse(JSON.stringify(val)));
     const _json = JSON.parse(JSON.stringify(val));
-    localforage.setItem('__bvlist', _json);
+    if (!getUrlParam('bv')) {
+      localforage.setItem('__bvlist', _json);
+    }
   },
   { deep: true }
+);
+watch(
+  () => data.second,
+  val => {
+    loopGetData();
+  }
 );
 
 function getCache() {
@@ -54,6 +63,7 @@ function addVideoHandler() {
     });
     getData();
   }
+  data.bv = '';
 }
 function getData() {
   data.videoList.forEach(element => {
@@ -74,13 +84,17 @@ function getData() {
             view: stat.view,
             online: data.total,
             like: stat.like,
-            coin: stat.coin
+            coin: stat.coin,
+            reply: stat.reply,
+            danmaku: stat.danmaku
           };
           element.view = targetInfo.view;
           element.title = title;
           element.online = targetInfo.online;
           element.like = targetInfo.like;
           element.coin = targetInfo.coin;
+          element.reply = targetInfo.reply;
+          element.danmaku = targetInfo.danmaku;
         });
       });
   });
@@ -99,15 +113,46 @@ function removeVideo(videoItem) {
     type: 'success'
   });
 }
-
+function copyUrl(id) {
+  $('body').after("<input id='copyVal'></input>");
+  var text = id;
+  var input = document.getElementById('copyVal');
+  input.value = text;
+  input.select();
+  input.setSelectionRange(0, input.value.length);
+  document.execCommand('copy');
+  $('#copyVal').remove();
+}
 onMounted(() => {
-  getCache();
+  const bvListString = getUrlParam('bv');
+  if (bvListString) {
+    let bvList = bvListString.split(',');
+    let newBvList = [];
+    bvList.forEach(bv => {
+      newBvList.push({
+        bv
+      });
+    });
+    data.videoList = newBvList;
+  } else {
+    getCache();
+  }
   setTimeout(() => {
     getData();
   }, 1000);
   loopGetData();
+  new Darkmode().showWidget();
 });
 
+function commafy(num) {
+  return num ? String(num).replace(/(\d)(?=(\d{3})+$)/g, '$1,') : 0;
+}
+function getUrlParam(name) {
+  var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)'); // 构造一个含有目标参数的正则表达式对象
+  var r = window.location.search.substr(1).match(reg); // 匹配目标参数
+  if (r != null) return unescape(r[2]);
+  return null; // 返回参数值
+}
 function loopGetData() {
   if (data.dataInterval) {
     clearInterval(data.dataInterval);
@@ -116,44 +161,65 @@ function loopGetData() {
     getData();
   }, 1000 * data.second);
 }
+function share() {
+  let url = 'http://' + window.document.domain;
+  let params = '?bv='
+  let paramsArray = []
+  if(data?.videoList?.length){
+    data.videoList.forEach(element => {
+      paramsArray.push(element.bv)
+    });
+  }
+  url = url + params + paramsArray.join()
+  
+  copyUrl(url);
+  ElMessage({
+    message: '地址已复制，分享给别人吧！',
+    type: 'success'
+  });
+}
 </script>
 
 <template>
-  <div style="max-width: 800px;margin: 0 auto">
-    <div style="text-align:left;margin-bottom:10px">
-      <span style="color: #666; padding-right: 10px">刷新频率</span>
-      <el-input-number
-        v-model="data.second"
-        :min="5"
-        :max="10000000"
-      />
-    </div>
-    <div class="mb-4">
-      <el-input
-        clearable
-        v-model="data.bv"
-        placeholder="输入BV号"
-      >
-        <template #prepend>https://www.bilibili.com/video/</template>
-        <template #append>
-          <el-button
-            @click="addVideoHandler"
-            type="primary"
-          >确定</el-button>
-        </template>
-      </el-input>
+  <div style="max-width: 1000px;margin: 0 auto">
+    <div style="display: flex">
+      <div style="text-align:left;margin-bottom:10px;margin-right: 10px">
+        <el-input-number
+          v-model="data.second"
+          :min="5"
+          :max="10000000"
+        />
+      </div>
+      <div style="width: 100%;margin-right: 10px">
+        <el-input
+          clearable
+          v-model="data.bv"
+          placeholder="输入BV号"
+        >
+          <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
+          <template #append>
+            <el-button
+              @click="addVideoHandler"
+              type="primary"
+            >确定</el-button>
+          </template>
+        </el-input>
+      </div>
+      <el-button
+        @click="share"
+        type="primary"
+      >分享</el-button>
     </div>
     <div
       v-for="(item, index) in data.videoList"
       :key="index + '_video'"
-      style="background: #00a1d6; padding: 5px 10px 20px 10px;border-radius: 5px"
-      class="mb-2"
+      class="mb-2 video-box"
     >
       <el-descriptions
         :title="item.title"
         border
         style="width: 100%"
-        :column="4"
+        :column="2"
       >
         <template #extra>
           <el-popconfirm
@@ -165,10 +231,16 @@ function loopGetData() {
             </template>
           </el-popconfirm>
         </template>
-        <el-descriptions-item label="播放">{{item.view}}</el-descriptions-item>
-        <el-descriptions-item label="在线">{{item.online}}</el-descriptions-item>
-        <el-descriptions-item label="赞">{{item.like}}</el-descriptions-item>
-        <el-descriptions-item label="币">{{item.coin}}</el-descriptions-item>
+        <el-descriptions-item label="播放">
+          <span style="color: #e47470">{{commafy(item.view)}}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="在线">
+          <span style="color: #e47470">{{commafy(item.online)}}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="点赞">{{commafy(item.like)}}</el-descriptions-item>
+        <el-descriptions-item label="投币">{{commafy(item.coin)}}</el-descriptions-item>
+        <el-descriptions-item label="评论">{{commafy(item.reply)}}</el-descriptions-item>
+        <el-descriptions-item label="弹幕">{{commafy(item.danmaku)}}</el-descriptions-item>
       </el-descriptions>
     </div>
   </div>
@@ -185,6 +257,18 @@ function loopGetData() {
 .el-descriptions__title {
   overflow: hidden;
   max-width: 85% !important;
-  color: #fff !important;
+  word-break: keep-all; /* 不换行 */
+  white-space: nowrap; /* 不换行 */
+  overflow: hidden; /* 内容超出宽度时隐藏超出部分的内容 */
+  text-overflow: ellipsis; /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
+}
+td.is-bordered-content {
+  font-size: 1rem !important;
+  font-weight: 900 !important;
+}
+.video-box {
+  background: rgb(206, 206, 206);
+  padding: 5px 10px 20px 10px;
+  border-radius: 5px;
 }
 </style>
