@@ -10,3 +10,6 @@
 [在线地址](https://bzhan.vip/) 
 
 测试bv：BV1vm4y1S73m
+
+截图：
+![截图](https://tvax4.sinaimg.cn/large/006PxeGLly1gyy9og154nj31oe1dsdrl.jpg)
