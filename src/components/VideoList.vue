@@ -25,7 +25,9 @@ const data = reactive({
   bv: '',
   videoList: [],
   dataInterval: '',
-  second: 10
+  second: 10,
+  fansCount: 0,
+  userName: ''
 });
 
 /**
@@ -37,10 +39,7 @@ const data = reactive({
 watch(
   () => data.videoList,
   val => {
-    const _json = JSON.parse(JSON.stringify(val));
-    if (!getUrlParam('bv')) {
-      localforage.setItem('__bvlist', _json);
-    }
+    setCache(val);
   },
   { deep: true }
 );
@@ -75,15 +74,48 @@ onMounted(() => {
       });
     });
     data.videoList = newBvList;
+    setCache(newBvList);
   } else {
     getCache();
   }
   setTimeout(() => {
     getData();
+    getUpInfo();
   }, 1000);
   loopGetData();
   new Darkmode().showWidget();
 });
+
+function setCache(val) {
+  const _json = JSON.parse(JSON.stringify(val));
+  if (!getUrlParam('bv')) {
+    localforage.setItem('__bvlist', _json);
+  }
+}
+
+/**
+ * 获取UP主信息，粉丝数等
+ */
+function getUpInfo() {
+  // 请求 URL: https://api.bilibili.com/x/web-interface/search/all/v2?__refresh__=true&_extra=&context=&page=1&page_size=42&order=&duration=&from_source=&from_spmid=333.337&platform=pc&highlight=1&single_column=0&keyword=%E7%A9%BF%E5%B1%B1%E8%B4%BE%E8%AF%B4%E4%BA%86%E5%95%A5&preload=true&com2co=true
+  if (!data.userName) return;
+  axios.get('/api/x/web-interface/search/all/v2?keyword=' + encodeURIComponent(data.userName)).then(res => {
+    data.fansCount = 0;
+    if (res.status !== 200) return;
+    const { result } = res.data.data;
+    let userId = '';
+    if (result.length) {
+      result.forEach(element => {
+        if (element.result_type === 'bili_user') {
+          if (element?.data?.length) {
+            let fansCount = element.data[0].fans;
+            data.fansCount = fansCount;
+          }
+        }
+      });
+    }
+  });
+}
 
 /**
  * @Author: jiazehua
@@ -245,6 +277,7 @@ function loopGetData() {
   }
   data.dataInterval = setInterval(() => {
     getData();
+    getUpInfo();
   }, 1000 * data.second);
 }
 
@@ -275,34 +308,49 @@ function share() {
 
 <template>
   <div style="max-width: 1000px;margin: 0 auto">
-    <div style="display: flex">
-      <div style="text-align:left;margin-bottom:10px;margin-right: 10px">
-        <el-input-number
-          v-model="data.second"
-          :min="5"
-          :max="10000000"
-        />
-      </div>
-      <div style="width: 100%;margin-right: 10px">
-        <el-input
-          clearable
-          v-model="data.bv"
-          placeholder="输入BV号"
+    <div style="margin-bottom: 5px">
+      <div style="display: flex">
+        <div style="margin-right: 10px">
+          <el-input
+            clearable
+            v-model="data.userName"
+            placeholder="输入UP昵称"
+          ></el-input>
+        </div>
+        <div
+          style="width: 100px;margin-right: 10px"
+          v-if="data.fansCount"
         >
-          <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
-          <template #append>
-            <el-button
-              @click="addVideoHandler"
-              type="primary"
-            >确定</el-button>
-          </template>
-        </el-input>
+          <p style="line-height: 32px; margin:0">粉丝数 {{data.fansCount}}</p>
+        </div>
+
+        <el-button
+          @click="share"
+          type="primary"
+        >分享</el-button>
       </div>
-      <el-button
-        @click="share"
-        type="primary"
-      >分享</el-button>
     </div>
+    <div style="margin-bottom: 10px">
+      <el-input
+        clearable
+        v-model="data.bv"
+        placeholder="输入BV号"
+      >
+        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
+        <template #append>
+          <el-button
+            @click="addVideoHandler"
+            type="primary"
+          >添加</el-button>
+        </template>
+      </el-input>
+    </div>
+
+    <!-- <el-button
+            @click="share"
+            type="primary"
+    >分享</el-button>-->
+
     <div
       v-for="(item, index) in data.videoList"
       :key="index + '_video'"
@@ -360,8 +408,15 @@ td.is-bordered-content {
   font-weight: 900 !important;
 }
 .video-box {
-  background: rgb(206, 206, 206);
+  background: #fff;
   padding: 5px 10px 20px 10px;
   border-radius: 5px;
+}
+html,
+body {
+  background-color: #f5f5f5 !important;
+  min-height: 100vh;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 </style>
