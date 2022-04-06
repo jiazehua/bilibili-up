@@ -4,6 +4,8 @@ import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import localforage from 'localforage';
 import Darkmode from 'darkmode-js';
+import { Delete, Edit, Search, Share, Upload } from '@element-plus/icons-vue';
+
 /**
  * @Author: jiazehua
  * @Description: 定义参数
@@ -25,9 +27,10 @@ const data = reactive({
   bv: '',
   videoList: [],
   dataInterval: '',
-  second: 10,
+  second: 8,
   fansCount: 0,
-  userName: ''
+  fansChangeCount: 0,
+  userName: '穿山贾说了啥'
 });
 
 /**
@@ -58,6 +61,18 @@ watch(
 );
 
 /**
+ * 监听粉丝数量变化
+ */
+watch(
+  () => data.fansCount,
+  (val, oldVal) => {
+    if (oldVal) {
+      data.fansChangeCount = val - oldVal;
+    }
+  }
+);
+
+/**
  * @Author: jiazehua
  * @Description: 页面初始化方法
  * @param {*}
@@ -81,16 +96,14 @@ onMounted(() => {
   setTimeout(() => {
     getData();
     getUpInfo();
-  }, 1000);
+  }, 500);
   loopGetData();
   new Darkmode().showWidget();
 });
 
 function setCache(val) {
   const _json = JSON.parse(JSON.stringify(val));
-  if (!getUrlParam('bv')) {
-    localforage.setItem('__bvlist', _json);
-  }
+  localforage.setItem('__bvlist', _json);
 }
 
 /**
@@ -186,7 +199,7 @@ function getData() {
           const data = moreInfo.data.data;
           const targetInfo = {
             view: stat.view,
-            online: data.total,
+            online: data?.total || '',
             like: stat.like,
             coin: stat.coin,
             reply: stat.reply,
@@ -276,6 +289,7 @@ function loopGetData() {
     clearInterval(data.dataInterval);
   }
   data.dataInterval = setInterval(() => {
+    data.fansChangeCount = 0
     getData();
     getUpInfo();
   }, 1000 * data.second);
@@ -318,10 +332,33 @@ function share() {
           ></el-input>
         </div>
         <div
-          style="width: 100px;margin-right: 10px"
+          style="width: 140px;margin-right: 10px"
           v-if="data.fansCount"
         >
-          <p style="line-height: 32px; margin:0">粉丝数 {{data.fansCount}}</p>
+          <el-badge
+            v-if="data.fansChangeCount"
+            :value="(data.fansChangeCount > 0 ? '+' : '-' )+ data.fansChangeCount"
+            :type="data.fansChangeCount > 0 ? 'danger' : 'success'"
+            class="item"
+          >
+            <p style="line-height: 32px; margin:0; padding-right:5px">
+              粉丝数
+              <span
+                :class="data.fansChangeCount ?( data.fansChangeCount > 0 ? 'text-danger' : 'text-success') : 'text-default'"
+                style="font-weight: 900"
+              >{{data.fansCount}}</span>
+            </p>
+          </el-badge>
+          <p
+            v-else
+            style="line-height: 32px; margin:0; padding-right:5px"
+          >
+            粉丝数
+            <span
+              :class="data.fansChangeCount ?( data.fansChangeCount > 0 ? 'text-danger' : 'text-success') : 'text-default'"
+              style="font-weight: 900"
+            >{{data.fansCount}}</span>
+          </p>
         </div>
 
         <el-button
@@ -329,21 +366,6 @@ function share() {
           type="primary"
         >分享</el-button>
       </div>
-    </div>
-    <div style="margin-bottom: 10px">
-      <el-input
-        clearable
-        v-model="data.bv"
-        placeholder="输入BV号"
-      >
-        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
-        <template #append>
-          <el-button
-            @click="addVideoHandler"
-            type="primary"
-          >添加</el-button>
-        </template>
-      </el-input>
     </div>
 
     <!-- <el-button
@@ -368,7 +390,13 @@ function share() {
             @confirm="removeVideo(item)"
           >
             <template #reference>
-              <el-button type="danger">移除</el-button>
+              <el-button
+                type="danger"
+                size="small"
+                :icon="Delete"
+              />
+
+              <!-- <el-button type="danger"  :icon="Delete" >移除</el-button> -->
             </template>
           </el-popconfirm>
         </template>
@@ -383,6 +411,21 @@ function share() {
         <el-descriptions-item label="评论">{{commafy(item.reply)}}</el-descriptions-item>
         <el-descriptions-item label="弹幕">{{commafy(item.danmaku)}}</el-descriptions-item>
       </el-descriptions>
+    </div>
+    <div style="margin-bottom: 10px">
+      <el-input
+        clearable
+        v-model="data.bv"
+        placeholder="输入BV号"
+      >
+        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
+        <template #append>
+          <el-button
+            @click="addVideoHandler"
+            type="primary"
+          >添加</el-button>
+        </template>
+      </el-input>
     </div>
   </div>
 </template>
@@ -418,5 +461,17 @@ body {
   min-height: 100vh;
   padding: 0 !important;
   margin: 0 !important;
+}
+.el-descriptions__header {
+  margin-bottom: 6px !important;
+}
+.text-danger {
+  color: #e47470;
+}
+.text-success {
+  color: #7ec050;
+}
+.text-default {
+  color: #000;
 }
 </style>
