@@ -289,7 +289,7 @@ function loopGetData() {
     clearInterval(data.dataInterval);
   }
   data.dataInterval = setInterval(() => {
-    data.fansChangeCount = 0
+    data.fansChangeCount = 0;
     getData();
     getUpInfo();
   }, 1000 * data.second);
@@ -372,7 +372,21 @@ function share() {
             @click="share"
             type="primary"
     >分享</el-button>-->
-
+    <div style="margin-bottom: 10px">
+      <el-input
+        clearable
+        v-model="data.bv"
+        placeholder="输入BV号"
+      >
+        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
+        <template #append>
+          <el-button
+            @click="addVideoHandler"
+            type="primary"
+          >添加</el-button>
+        </template>
+      </el-input>
+    </div>
     <div
       v-for="(item, index) in data.videoList"
       :key="index + '_video'"
@@ -411,21 +425,6 @@ function share() {
         <el-descriptions-item label="评论">{{commafy(item.reply)}}</el-descriptions-item>
         <el-descriptions-item label="弹幕">{{commafy(item.danmaku)}}</el-descriptions-item>
       </el-descriptions>
-    </div>
-    <div style="margin-bottom: 10px">
-      <el-input
-        clearable
-        v-model="data.bv"
-        placeholder="输入BV号"
-      >
-        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
-        <template #append>
-          <el-button
-            @click="addVideoHandler"
-            type="primary"
-          >添加</el-button>
-        </template>
-      </el-input>
     </div>
   </div>
 </template>
