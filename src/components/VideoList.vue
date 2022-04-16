@@ -337,7 +337,7 @@ function share() {
         >
           <el-badge
             v-if="data.fansChangeCount"
-            :value="(data.fansChangeCount > 0 ? '+' : '-' )+ data.fansChangeCount"
+            :value="(data.fansChangeCount > 0 ? '+' : '' )+ data.fansChangeCount"
             :type="data.fansChangeCount > 0 ? 'danger' : 'success'"
             class="item"
           >
