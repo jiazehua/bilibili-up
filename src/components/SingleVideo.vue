@@ -37,10 +37,10 @@
       <span class="title-inline bold">粉丝数</span>
       {{commafy(data.follower)}}
       <span
-        style="margin-left:1vh"
+        style="margin-left:.5vh;"
         :class="data.followerDiff ?( data.followerDiff > 0 ? 'text-danger bold' : 'text-success bold') : 'text-default bold '"
         v-if="data.followerDiff"
-      >（{{ data.followerDiff > 0 ? '+' + data.followerDiff : data.followerDiff }}）</span>
+      >{{ data.followerDiff > 0 ? '+' + data.followerDiff : data.followerDiff }}</span>
     </p>
   </el-row>
 
@@ -92,6 +92,7 @@ import { Delete, Edit, Search, Share, Upload } from '@element-plus/icons-vue';
 
 const data = reactive({
   bv: '',
+  av: '',
   uid: '',
   second: 30,
   follower: 0,
@@ -278,7 +279,7 @@ function copyUrl(id) {
   color: #000;
 }
 .block-p {
-  font-size: 3.5vh !important;
+  font-size: 3vh !important;
   margin: 1vh 0;
   text-align: left;
   background: #fff;
