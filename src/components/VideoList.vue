@@ -27,10 +27,10 @@ const data = reactive({
   bv: '',
   videoList: [],
   dataInterval: '',
-  second: 8,
+  second: 20,
   fansCount: 0,
   fansChangeCount: 0,
-  userName: '穿山贾说了啥'
+  uid: '557998295'
 });
 
 /**
@@ -68,6 +68,9 @@ watch(
   (val, oldVal) => {
     if (oldVal) {
       data.fansChangeCount = val - oldVal;
+      setTimeout(() => {
+        data.fansChangeCount = 0;
+      }, 5000);
     }
   }
 );
@@ -80,6 +83,7 @@ watch(
  */
 onMounted(() => {
   const bvListString = getUrlParam('bv');
+  const uid = getUrlParam('uid');
   if (bvListString) {
     let bvList = bvListString.split(',');
     let newBvList = [];
@@ -90,12 +94,13 @@ onMounted(() => {
     });
     data.videoList = newBvList;
     setCache(newBvList);
+    localforage.setItem('__uid', uid);
   } else {
     getCache();
   }
   setTimeout(() => {
+    getDataForUid();
     getData();
-    getUpInfo();
   }, 500);
   loopGetData();
   new Darkmode().showWidget();
@@ -109,24 +114,14 @@ function setCache(val) {
 /**
  * 获取UP主信息，粉丝数等
  */
-function getUpInfo() {
-  // 请求 URL: https://api.bilibili.com/x/web-interface/search/all/v2?__refresh__=true&_extra=&context=&page=1&page_size=42&order=&duration=&from_source=&from_spmid=333.337&platform=pc&highlight=1&single_column=0&keyword=%E7%A9%BF%E5%B1%B1%E8%B4%BE%E8%AF%B4%E4%BA%86%E5%95%A5&preload=true&com2co=true
-  if (!data.userName) return;
-  axios.get('/api/x/web-interface/search/all/v2?keyword=' + encodeURIComponent(data.userName)).then(res => {
-    data.fansCount = 0;
+
+function getDataForUid() {
+  // x/relation/stat?vmid=557998295
+  let uid = data.uid;
+  axios.get('/api/x/relation/stat?vmid=' + uid).then(res => {
     if (res.status !== 200) return;
-    const { result } = res.data.data;
-    let userId = '';
-    if (result.length) {
-      result.forEach(element => {
-        if (element.result_type === 'bili_user') {
-          if (element?.data?.length) {
-            let fansCount = element.data[0].fans;
-            data.fansCount = fansCount;
-          }
-        }
-      });
-    }
+    const { follower } = res.data.data;
+    data.fansCount = follower;
   });
 }
 
@@ -137,16 +132,17 @@ function getUpInfo() {
  * @return {*}
  */
 function getCache() {
-  localforage
-    .getItem('__bvlist')
-    .then(res => {
-      if (res?.length) {
-        data.videoList = res;
-      }
-    })
-    .catch(e => {
-      console.log('e :>> ', e);
-    });
+  localforage.getItem('__bvlist').then(res => {
+    if (res?.length) {
+      data.videoList = res;
+    }
+  });
+
+  localforage.getItem('__uid').then(res => {
+    if (res?.length) {
+      data.uid = res;
+    }
+  });
 }
 
 /**
@@ -158,6 +154,13 @@ function getCache() {
 function addVideoHandler() {
   if (!data.bv) return;
   let bvList = [];
+  if (data.videoList.length > 3) {
+    ElMessage({
+      message: '不能超过3个',
+      type: 'error'
+    });
+    return false;
+  }
   data.videoList.forEach(element => {
     bvList.push(element.bv);
   });
@@ -183,37 +186,41 @@ function addVideoHandler() {
  * @return {*}
  */
 function getData() {
-  data.videoList.forEach(element => {
-    axios
-      .get('/api/x/web-interface/view?bvid=' + element.bv)
-      .then(res => {
-        if (res.status !== 200) return;
-        const data = res.data.data;
-        // const {cid, bvid} = data
-        return data;
-      })
-      .then(res => {
-        if (!res) return;
-        let { cid, bvid, title, stat } = res;
-        axios.get(`/api/x/player/online/total?bvid=${bvid}&cid=${cid}`).then(moreInfo => {
-          const data = moreInfo.data.data;
-          const targetInfo = {
-            view: stat.view,
-            online: data?.total || '',
-            like: stat.like,
-            coin: stat.coin,
-            reply: stat.reply,
-            danmaku: stat.danmaku
-          };
-          element.view = targetInfo.view;
-          element.title = title;
-          element.online = targetInfo.online;
-          element.like = targetInfo.like;
-          element.coin = targetInfo.coin;
-          element.reply = targetInfo.reply;
-          element.danmaku = targetInfo.danmaku;
+  data.videoList.forEach((element, _index) => {
+    setTimeout(() => {
+      axios
+        .get('/api/x/web-interface/view?bvid=' + element.bv)
+        .then(res => {
+          if (res.status !== 200) return;
+          const data = res.data.data;
+          // const {cid, bvid} = data
+          return data;
+        })
+        .then(res => {
+          if (!res) return;
+          let { cid, bvid, title, stat } = res;
+          setTimeout(() => {
+            axios.get(`/api/x/player/online/total?bvid=${bvid}&cid=${cid}`).then(moreInfo => {
+              const data = moreInfo.data.data;
+              const targetInfo = {
+                view: stat.view,
+                online: data?.total || '',
+                like: stat.like,
+                coin: stat.coin,
+                reply: stat.reply,
+                danmaku: stat.danmaku
+              };
+              element.view = targetInfo.view;
+              element.title = title;
+              element.online = targetInfo.online;
+              element.like = targetInfo.like;
+              element.coin = targetInfo.coin;
+              element.reply = targetInfo.reply;
+              element.danmaku = targetInfo.danmaku;
+            });
+          }, 1000);
         });
-      });
+    }, 2000 * (_index + 1));
   });
 }
 
@@ -289,9 +296,8 @@ function loopGetData() {
     clearInterval(data.dataInterval);
   }
   data.dataInterval = setInterval(() => {
-    data.fansChangeCount = 0;
+    getDataForUid();
     getData();
-    getUpInfo();
   }, 1000 * data.second);
 }
 
@@ -311,6 +317,9 @@ function share() {
     });
   }
   url = url + params + paramsArray.join();
+  if (data.uid) {
+    url = url + '&uid=' + data.uid;
+  }
 
   copyUrl(url);
   ElMessage({
@@ -327,7 +336,7 @@ function share() {
         <div style="margin-right: 10px">
           <el-input
             clearable
-            v-model="data.userName"
+            v-model="data.uid"
             placeholder="输入UP昵称"
           ></el-input>
         </div>

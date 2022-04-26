@@ -17,68 +17,91 @@
 
     <el-col :span="10">
       <el-button
+        @click="refresh"
+        type="primary"
+      >添加</el-button>
+
+      <el-button
         @click="share"
         type="warning"
       >分享</el-button>
-      <el-button
-        @click="refresh"
-        type="primary"
-      >刷新</el-button>
     </el-col>
   </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline bold">标题</span>
-      {{data.videoInfo.title}}
-    </p>
-  </el-row>
-  <el-row v-if="data.follower">
-    <p class="block-p">
-      <span class="title-inline bold">粉丝数</span>
-      {{commafy(data.follower)}}
-      <span
-        style="margin-left:.5vh;"
-        :class="data.followerDiff ?( data.followerDiff > 0 ? 'text-danger bold' : 'text-success bold') : 'text-default bold '"
-        v-if="data.followerDiff"
-      >{{ data.followerDiff > 0 ? '+' + data.followerDiff : data.followerDiff }}</span>
-    </p>
+  <el-row
+    :gutter="20"
+    style="margin-top: 1vh"
+  >
+    <!-- <el-col :span="8">
+      <el-input
+        clearable
+        v-model="data.uid"
+        placeholder="输入UID"
+      ></el-input>
+    -->
+    <el-col :span="14">
+      <el-input
+        clearable
+        v-model="data.uid"
+        placeholder="输入UID"
+      ></el-input>
+    </el-col>
+
+    <el-col :span="10">
+      <p
+        class="block-p bold"
+        v-if="data.follower"
+      >
+        <span class="title-inline bold text-danger">粉丝</span>
+        {{commafy(data.follower)}}
+        <span
+          style="margin-left:.5vh;"
+          :class="data.followerDiff ?( data.followerDiff > 0 ? 'text-danger bold' : 'text-success bold') : 'text-default bold '"
+          v-if="data.followerDiff"
+        >{{ data.followerDiff > 0 ? '+' + data.followerDiff : data.followerDiff }}</span>
+      </p>
+    </el-col>
   </el-row>
 
   <el-row>
-    <p class="block-p">
-      <span class="title-inline bold text-danger">播放</span>
-      {{commafy(data.videoInfo.view)}}
-    </p>
-  </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline bold text-danger">在线</span>
-      {{commafy(data.videoInfo.online)}}
-    </p>
-  </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline">点赞</span>
-      {{commafy(data.videoInfo.like)}}
-    </p>
-  </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline">投币</span>
-      {{commafy(data.videoInfo.coin)}}
-    </p>
-  </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline">评论</span>
-      {{commafy(data.videoInfo.reply)}}
-    </p>
-  </el-row>
-  <el-row>
-    <p class="block-p">
-      <span class="title-inline">弹幕</span>
-      {{commafy(data.videoInfo.danmaku)}}
-    </p>
+    <el-col :span="12">
+      <div class="block-div">
+        <img
+          :src="data.videoInfo.pic"
+          style="width: 100%;border-radius: 10px!important;margin-top: 5px!important"
+          alt
+        />
+
+        <p class="block-p">
+          <span class="title-inline bold text-danger">播放</span>
+          <span class="bold">{{commafy(data.videoInfo.view)}}</span>
+        </p>
+
+        <p class="block-p">
+          <span class="title-inline bold text-danger">在线</span>
+          <span class="bold">{{commafy(data.videoInfo.online)}}</span>
+        </p>
+
+        <p class="block-p block-p-2">
+          <span class="title-inline">点赞</span>
+          {{commafy(data.videoInfo.like)}}
+        </p>
+
+        <p class="block-p block-p-2">
+          <span class="title-inline">投币</span>
+          {{commafy(data.videoInfo.coin)}}
+        </p>
+
+        <p class="block-p block-p-2">
+          <span class="title-inline">评论</span>
+          {{commafy(data.videoInfo.reply)}}
+        </p>
+
+        <p class="block-p block-p-2">
+          <span class="title-inline">弹幕</span>
+          {{commafy(data.videoInfo.danmaku)}}
+        </p>
+      </div>
+    </el-col>
   </el-row>
 </template>
 <script setup>
@@ -103,7 +126,8 @@ const data = reactive({
     like: 0,
     coin: 0,
     reply: 0,
-    danmaku: 0
+    danmaku: 0,
+    pic: ''
   }
 });
 
@@ -132,7 +156,7 @@ watch(
   val => {
     if (val) {
       setTimeout(() => {
-        window.localStorage.setItem('bv', val);
+        localforage.setItem('bv', val);
       }, 1000);
     }
   }
@@ -140,7 +164,6 @@ watch(
 
 onMounted(() => {
   checkCache();
-  getData();
   loopGetData();
 });
 
@@ -155,19 +178,21 @@ function share() {
 
 function checkCache() {
   const bv = getUrlParam('bv');
-  // const uid = getUrlParam('uid');
-  // if (uid) {
-  //   window.sessionStorage.setItem('uid', uid);
-  //   data.uid = uid;
-  // }
+
   if (bv) {
-    window.localStorage.setItem('bv', bv);
-    data.bv = bv;
+    localforage.setItem('bv', bv).then(res => {
+      data.bv = bv;
+      getData();
+    });
   } else {
-    const localBv = window.localStorage.getItem('bv');
-    if (localBv) {
-      data.bv = localBv;
-    }
+    localforage.getItem('bv').then(localBv => {
+      if (localBv) {
+        data.bv = localBv;
+        getData();
+      } else {
+        getData();
+      }
+    });
   }
 }
 
@@ -188,6 +213,8 @@ function loopGetData() {
 }
 
 function getDataForBv() {
+  getDataForUid(data.uid);
+
   axios
     .get('/api/x/web-interface/view?bvid=' + data.bv)
     .then(res => {
@@ -198,10 +225,10 @@ function getDataForBv() {
     })
     .then(res => {
       if (!res) return;
-      let { cid, bvid, title, stat, owner } = res;
+      console.log('res :>> ', res);
+      let { cid, bvid, title, stat, owner, pic } = res;
       data.followerDiff = 0;
 
-      getDataForUid(owner.mid);
       axios.get(`/api/x/player/online/total?bvid=${bvid}&cid=${cid}`).then(moreInfo => {
         const _data = moreInfo.data.data;
         const targetInfo = {
@@ -210,7 +237,8 @@ function getDataForBv() {
           like: stat.like,
           coin: stat.coin,
           reply: stat.reply,
-          danmaku: stat.danmaku
+          danmaku: stat.danmaku,
+          pic
         };
         data.videoInfo.view = targetInfo.view;
         data.videoInfo.title = title;
@@ -219,6 +247,7 @@ function getDataForBv() {
         data.videoInfo.coin = targetInfo.coin;
         data.videoInfo.reply = targetInfo.reply;
         data.videoInfo.danmaku = targetInfo.danmaku;
+        data.videoInfo.pic = targetInfo.pic;
       });
     });
 }
@@ -268,7 +297,7 @@ function copyUrl(id) {
 }
 </script>
 
-<style>
+<style lang="scss">
 .text-danger {
   color: #e47470;
 }
@@ -278,25 +307,50 @@ function copyUrl(id) {
 .text-default {
   color: #000;
 }
-.block-p {
-  font-size: 3vh !important;
-  margin: 1vh 0;
-  text-align: left;
+.el-col {
+  &:nth-child(odd) {
+    .block-div {
+      margin-left: 0 !important;
+    }
+  }
+  &:nth-child(even) {
+    .block-div {
+      margin-right: 0 !important;
+    }
+  }
+}
+.block-div {
+  margin-top: 2vh;
+  box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.09);
+  border-radius: 10px;
+  padding: 5px 10px;
   background: #fff;
+  margin: 10px 5px;
+}
+
+.block-p {
+  &:last-child {
+    border-bottom: 0;
+  }
+  font-size: 1.8vh !important;
+  line-height: 1.8;
+  height: 3vh;
+  margin: 0;
+  text-align: left;
   width: 100%;
-  padding: 1vh;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: inline-block;
+  border-bottom: 1px dashed #ddd;
 }
 html,
 body {
   min-height: 100%;
   background-color: #f5f5f5;
 }
+
 .title-inline {
-  width: 15vh;
+  width: 4vh;
   display: inline-block;
 }
 .bold {
