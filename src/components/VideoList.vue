@@ -27,10 +27,11 @@ const data = reactive({
   bv: '',
   videoList: [],
   dataInterval: '',
-  second: 20,
+  second: 15,
   fansCount: 0,
   fansChangeCount: 0,
-  uid: '557998295'
+  uid: ''
+  // uid: '557998295'
 });
 
 /**
@@ -69,7 +70,7 @@ watch(
     if (oldVal) {
       data.fansChangeCount = val - oldVal;
       setTimeout(() => {
-        data.fansChangeCount = 0;
+        // data.fansChangeCount = 0;
       }, 5000);
     }
   }
@@ -93,6 +94,7 @@ onMounted(() => {
       });
     });
     data.videoList = newBvList;
+    data.uid = uid;
     setCache(newBvList);
     localforage.setItem('__uid', uid);
   } else {
@@ -100,7 +102,7 @@ onMounted(() => {
   }
   setTimeout(() => {
     getDataForUid();
-    getData();
+    getDataOnce();
   }, 500);
   loopGetData();
   new Darkmode().showWidget();
@@ -218,9 +220,44 @@ function getData() {
               element.reply = targetInfo.reply;
               element.danmaku = targetInfo.danmaku;
             });
-          }, 1000);
+          }, 500);
         });
-    }, 2000 * (_index + 1));
+    }, 1000 * (_index + 1));
+  });
+}
+
+function getDataOnce() {
+  data.videoList.forEach((element, _index) => {
+    axios
+      .get('/api/x/web-interface/view?bvid=' + element.bv)
+      .then(res => {
+        if (res.status !== 200) return;
+        const data = res.data.data;
+        // const {cid, bvid} = data
+        return data;
+      })
+      .then(res => {
+        if (!res) return;
+        let { cid, bvid, title, stat } = res;
+        axios.get(`/api/x/player/online/total?bvid=${bvid}&cid=${cid}`).then(moreInfo => {
+          const data = moreInfo.data.data;
+          const targetInfo = {
+            view: stat.view,
+            online: data?.total || '',
+            like: stat.like,
+            coin: stat.coin,
+            reply: stat.reply,
+            danmaku: stat.danmaku
+          };
+          element.view = targetInfo.view;
+          element.title = title;
+          element.online = targetInfo.online;
+          element.like = targetInfo.like;
+          element.coin = targetInfo.coin;
+          element.reply = targetInfo.reply;
+          element.danmaku = targetInfo.danmaku;
+        });
+      });
   });
 }
 
@@ -337,11 +374,11 @@ function share() {
           <el-input
             clearable
             v-model="data.uid"
-            placeholder="输入UP昵称"
+            placeholder="输入UID"
           ></el-input>
         </div>
         <div
-          style="width: 140px;margin-right: 10px"
+          style="width: 170px;margin-right: 10px"
           v-if="data.fansCount"
         >
           <el-badge
