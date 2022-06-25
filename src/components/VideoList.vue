@@ -126,7 +126,7 @@ function setCache(val) {
 function getDataForUid() {
   // x/relation/stat?vmid=557998295
   let uid = data.uid;
-  axios.get('https://tenapi.cn/bilibilifo/?uid=' + uid).then(res => {
+  axios.get('/api/x/relation/stat?vmid=' + uid).then(res => {
     if (res.status !== 200) return;
     const { follower } = res.data.data;
     data.fansCount = follower;
