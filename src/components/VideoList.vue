@@ -25,12 +25,13 @@ defineProps({
  */
 const data = reactive({
   bv: '',
+  shareUrl: '',
   videoList: [],
   dataInterval: '',
   second: 20,
   fansCount: 0,
   fansChangeCount: 0,
-  uid: '557998295'
+  uid: ''
 });
 
 /**
@@ -57,6 +58,12 @@ watch(
   () => data.second,
   val => {
     loopGetData();
+  }
+);
+watch(
+  () => data.uid,
+  val => {
+    getDataForUid();
   }
 );
 
@@ -93,6 +100,7 @@ onMounted(() => {
       });
     });
     data.videoList = newBvList;
+    data.uid = uid;
     setCache(newBvList);
     localforage.setItem('__uid', uid);
   } else {
@@ -118,7 +126,7 @@ function setCache(val) {
 function getDataForUid() {
   // x/relation/stat?vmid=557998295
   let uid = data.uid;
-  axios.get('/api/x/relation/stat?vmid=' + uid).then(res => {
+  axios.get('https://tenapi.cn/bilibilifo/?uid=' + uid).then(res => {
     if (res.status !== 200) return;
     const { follower } = res.data.data;
     data.fansCount = follower;
@@ -134,6 +142,14 @@ function getDataForUid() {
 function getCache() {
   localforage.getItem('__bvlist').then(res => {
     if (res?.length) {
+      res.forEach(element => {
+        element.coin = '';
+        element.danmaku = '';
+        element.like = '';
+        element.online = '';
+        element.reply = '';
+        element.view = '';
+      });
       data.videoList = res;
     }
   });
@@ -154,15 +170,18 @@ function getCache() {
 function addVideoHandler() {
   if (!data.bv) return;
   let bvList = [];
-  if (data.videoList.length > 3) {
-    ElMessage({
-      message: '不能超过3个',
-      type: 'error'
-    });
-    return false;
+  if (data.uid !== 557998295) {
+    if (data.videoList.length > 3) {
+      ElMessage({
+        message: '不能超过3个',
+        type: 'error'
+      });
+      return false;
+    }
   }
+
   data.videoList.forEach(element => {
-    bvList.push(element.bv);
+    bvList.unshift(element.bv);
   });
   if (bvList.includes(data.bv)) {
     ElMessage({
@@ -171,7 +190,7 @@ function addVideoHandler() {
     });
     return;
   } else {
-    data.videoList.push({
+    data.videoList.unshift({
       bv: data.bv
     });
     getData();
@@ -194,6 +213,7 @@ function getData() {
           if (res.status !== 200) return;
           const data = res.data.data;
           // const {cid, bvid} = data
+          console.log('data :>> ', data);
           return data;
         })
         .then(res => {
@@ -220,7 +240,7 @@ function getData() {
             });
           }, 1000);
         });
-    }, 2000 * (_index + 1));
+    }, 500 * (_index + 1));
   });
 }
 
@@ -242,23 +262,6 @@ function removeVideo(videoItem) {
     message: '移除成功',
     type: 'success'
   });
-}
-
-/**
- * @Author: jiazehua
- * @Description: 复制地址方法
- * @param {*} id
- * @return {*}
- */
-function copyUrl(id) {
-  $('body').after("<input id='copyVal'></input>");
-  var text = id;
-  var input = document.getElementById('copyVal');
-  input.value = text;
-  input.select();
-  input.setSelectionRange(0, input.value.length);
-  document.execCommand('copy');
-  $('#copyVal').remove();
 }
 
 /**
@@ -320,8 +323,7 @@ function share() {
   if (data.uid) {
     url = url + '&uid=' + data.uid;
   }
-
-  copyUrl(url);
+  data.shareUrl = url;
   ElMessage({
     message: '地址已复制，分享给别人吧！',
     type: 'success'
@@ -341,7 +343,7 @@ function share() {
           ></el-input>
         </div>
         <div
-          style="width: 140px;margin-right: 10px"
+          style="width: 180px;margin-right: 10px"
           v-if="data.fansCount"
         >
           <el-badge
@@ -373,29 +375,11 @@ function share() {
         <el-button
           @click="share"
           type="primary"
+          v-clipboard="data.shareUrl"
         >分享</el-button>
       </div>
     </div>
 
-    <!-- <el-button
-            @click="share"
-            type="primary"
-    >分享</el-button>-->
-    <div style="margin-bottom: 10px">
-      <el-input
-        clearable
-        v-model="data.bv"
-        placeholder="输入BV号"
-      >
-        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
-        <template #append>
-          <el-button
-            @click="addVideoHandler"
-            type="primary"
-          >添加</el-button>
-        </template>
-      </el-input>
-    </div>
     <div
       v-for="(item, index) in data.videoList"
       :key="index + '_video'"
@@ -434,6 +418,22 @@ function share() {
         <el-descriptions-item label="评论">{{commafy(item.reply)}}</el-descriptions-item>
         <el-descriptions-item label="弹幕">{{commafy(item.danmaku)}}</el-descriptions-item>
       </el-descriptions>
+    </div>
+
+    <div style="margin-bottom: 10px">
+      <el-input
+        clearable
+        v-model="data.bv"
+        placeholder="输入BV号"
+      >
+        <!-- <template #prepend>https://www.bilibili.com/video/</template> -->
+        <template #append>
+          <el-button
+            @click="addVideoHandler"
+            type="primary"
+          >添加</el-button>
+        </template>
+      </el-input>
     </div>
   </div>
 </template>

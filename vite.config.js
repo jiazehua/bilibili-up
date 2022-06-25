@@ -10,7 +10,7 @@ export default defineConfig({
         target: 'https://api.bilibili.com/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
-      },
+      }
     }
   }
 })

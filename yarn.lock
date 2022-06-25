@@ -24,8 +24,8 @@
 
 "@soerenmartius/vue3-clipboard@^0.1.2":
   version "0.1.2"
-  resolved "https://registry.nlark.com/@soerenmartius/vue3-clipboard/download/@soerenmartius/vue3-clipboard-0.1.2.tgz#83927f65b48da71bde044a276cdf858c1c021c38"
-  integrity sha1-g5J/ZbSNpxveBEonbN+FjBwCHDg=
+  resolved "https://registry.npmmirror.com/@soerenmartius/vue3-clipboard/-/vue3-clipboard-0.1.2.tgz#83927f65b48da71bde044a276cdf858c1c021c38"
+  integrity sha512-a5er6cFGcFIQ/3qg6kWvU0yFqIz9iWoQGEVs9azjevyRyMAKvj1w3JuLH9y6+u0WhMNby3kn7nuR8nktSnDesg==
   dependencies:
     clipboard "^2.0.0"
 
@@ -186,6 +186,11 @@ braces@~3.0.2:
   optionalDependencies:
     fsevents "~2.3.2"
 
+cleave.js@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.npmmirror.com/cleave.js/-/cleave.js-1.6.0.tgz#0e4e011943bdd70c67c9dcf4ff800ce710529171"
+  integrity sha512-ivqesy3j5hQVG3gywPfwKPbi/7ZSftY/UNp5uphnqjr25yI2CP8FS2ODQPzuLXXnNLi29e2+PgPkkiKUXLs/Nw==
+
 clipboard@^2.0.0:
   version "2.0.8"
   resolved "https://registry.npmmirror.com/clipboard/download/clipboard-2.0.8.tgz#ffc6c103dd2967a83005f3f61976aa4655a4cdba"
@@ -194,6 +199,20 @@ clipboard@^2.0.0:
     good-listener "^1.2.2"
     select "^1.1.2"
     tiny-emitter "^2.0.0"
+
+clipboard@^2.0.11:
+  version "2.0.11"
+  resolved "https://registry.npmmirror.com/clipboard/-/clipboard-2.0.11.tgz#62180360b97dd668b6b3a84ec226975762a70be5"
+  integrity sha512-C+0bbOqkezLIsmWSvlsXS0Q0bmkugu7jcfMIACB+RDEntIzQIkdr148we28AfSloQLRdZlYL/QYyrq05j/3Faw==
+  dependencies:
+    good-listener "^1.2.2"
+    select "^1.1.2"
+    tiny-emitter "^2.0.0"
+
+colortranslator@^1.9.2:
+  version "1.9.2"
+  resolved "https://registry.npmmirror.com/colortranslator/-/colortranslator-1.9.2.tgz#baff13493677ae21355468366fb9f4a6242f9f39"
+  integrity sha512-Hr1qCLwL/5gbGhcRwfhl1+JbvHmybTGbecpbhyzn3IyizgYFxMpLpX8OGhAcvSPB0+K2bwrAcFIbeF60wqOJLg==
 
 csstype@^2.6.8:
   version "2.6.19"
@@ -483,6 +502,11 @@ normalize-wheel-es@^1.1.1:
   resolved "https://r2.cnpmjs.org/normalize-wheel-es/-/normalize-wheel-es-1.1.1.tgz#a8096db6a56f94332d884fd8ebeda88f2fc79569"
   integrity sha512-157VNH4CngrcsvF8xOVOe22cwniIR3nxSltdctvQeHZj8JttEeOXffK28jucWfWBXs0QNetAumjc1GiInnwX4w==
 
+normalize.css@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.npmmirror.com/normalize.css/-/normalize.css-8.0.1.tgz#9b98a208738b9cc2634caacbc42d131c97487bf3"
+  integrity sha512-qizSNPO93t1YUuUhP22btGOo3chcvDFqFaj2TRybP0DMxkHOCTYwp3n34fel4a31ORXy4m1Xq0Gyqpb5m33qIg==
+
 path-parse@^1.0.7:
   version "1.0.7"
   resolved "https://r2.cnpmjs.org/path-parse/-/path-parse-1.0.7.tgz#fbc114b60ca42b30d9daf5858e4bd68bbedb6735"
@@ -603,3 +627,13 @@ vue@^3.2.25:
     "@vue/runtime-dom" "3.2.26"
     "@vue/server-renderer" "3.2.26"
     "@vue/shared" "3.2.26"
+
+vuestic-ui@^1.4.4:
+  version "1.4.4"
+  resolved "https://registry.npmmirror.com/vuestic-ui/-/vuestic-ui-1.4.4.tgz#31bf5f8f6fbb8275fae1d94d620880087bda3f9e"
+  integrity sha512-v3tnB+jSFmbcAFFlLtmBZgDooi3ADJUX35sYOwXjeHJ6yJj0+RK4aO+RhHRFC8DIzDU/7B6a1vtJu7aqEYCTdg==
+  dependencies:
+    cleave.js "^1.6.0"
+    colortranslator "^1.9.2"
+    lodash "^4.17.21"
+    normalize.css "^8.0.1"
