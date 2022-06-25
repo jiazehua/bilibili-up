@@ -213,7 +213,6 @@ function getData() {
           if (res.status !== 200) return;
           const data = res.data.data;
           // const {cid, bvid} = data
-          console.log('data :>> ', data);
           return data;
         })
         .then(res => {
