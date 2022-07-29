@@ -44,6 +44,10 @@ watch(
   () => data.videoList,
   val => {
     setCache(val);
+     if (val?.length) {
+      let _title = val[0].title;
+      document.getElementsByTagName('title')[0].innerText = _title;
+    }
   },
   { deep: true }
 );
