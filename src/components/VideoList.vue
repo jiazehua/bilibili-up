@@ -30,7 +30,7 @@ const data = reactive({
   second: 8,
   fansCount: 0,
   fansChangeCount: 0,
-  userName: '穿山贾说了啥'
+  uid: ''
 });
 
 /**
@@ -77,6 +77,21 @@ watch(
 );
 
 /**
+ * 监听粉丝数量变化
+ */
+watch(
+  () => data.uid,
+  (val, oldVal) => {
+    // 判断 val 是否为数字
+    if (val && !isNaN(val)) {
+      // 存入 sessionStorage
+      console.log('val :>> ', val);
+      getUpInfo();
+    }
+  }
+);
+
+/**
  * @Author: jiazehua
  * @Description: 页面初始化方法
  * @param {*}
@@ -115,22 +130,18 @@ function setCache(val) {
  */
 function getUpInfo() {
   // 请求 URL: https://api.bilibili.com/x/web-interface/search/all/v2?__refresh__=true&_extra=&context=&page=1&page_size=42&order=&duration=&from_source=&from_spmid=333.337&platform=pc&highlight=1&single_column=0&keyword=%E7%A9%BF%E5%B1%B1%E8%B4%BE%E8%AF%B4%E4%BA%86%E5%95%A5&preload=true&com2co=true
-  if (!data.userName) return;
-  axios.get('/api/x/web-interface/search/all/v2?keyword=' + encodeURIComponent(data.userName)).then(res => {
+  if (!data.uid) return;
+  console.log('data.uid :>> ', data.uid);
+  if (isNaN(data.uid)) return;
+  // data.uid去除空格
+  data.uid = data.uid.replace(/\s*/g, '');
+  axios.get('/api/x/relation/stat?vmid=' + data.uid).then(res => {
     data.fansCount = 0;
     if (res.status !== 200) return;
-    const { result } = res.data.data;
-    let userId = '';
-    if (result.length) {
-      result.forEach(element => {
-        if (element.result_type === 'bili_user') {
-          if (element?.data?.length) {
-            let fansCount = element.data[0].fans;
-            data.fansCount = fansCount;
-          }
-        }
-      });
-    }
+    console.log('res.data :>> ', res.data);
+    const { follower } = res.data.data;
+    console.log('follower :>> ', follower);
+    data.fansCount = follower;
   });
 }
 
@@ -331,7 +342,7 @@ function share() {
         <div style="margin-right: 10px">
           <el-input
             clearable
-            v-model="data.userName"
+            v-model="data.uid"
             placeholder="输入UP昵称"
           ></el-input>
         </div>
