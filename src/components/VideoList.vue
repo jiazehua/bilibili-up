@@ -424,8 +424,6 @@ function share() {
                 size="small"
                 :icon="Delete"
               />
-
-              <!-- <el-button type="danger"  :icon="Delete" >移除</el-button> -->
             </template>
           </el-popconfirm>
         </template>
